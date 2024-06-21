@@ -57,22 +57,24 @@ export default function Home() {
   const handleSetMousePos = (r: number, c: number) => { setMousePos({ row: r, col: c }) }
 
   const handleOnGridClick = async (r: number, c: number) => {
-setLoading(true)
+    setLoadingState(0)
+    setLoading(true)
     let newlog: { [key: string]: { frameN: number; dis: number } } = {};
 
     const bfsRes = await callAPINextMove('bfs', r, c);
     newlog['bfs'] = bfsRes;
-
+    setLoadingState(10)
     const dfsRes = await callAPINextMove('dfs', r, c);
     newlog['dfs'] = dfsRes;
-
+    setLoadingState(30)
     const dijkstraRes = await callAPINextMove('dijkstra', r, c);
     newlog['dijkstra'] = dijkstraRes;
-
+    setLoadingState(50)
     const bestFirstSearchRes = await callAPINextMove('best_first_search', r, c);
     newlog['best_first_search'] = bestFirstSearchRes;
-
+    setLoadingState(70)
     const aStarRes = await callAPINextMove('a_star', r, c);
+    setLoadingState(100)
     newlog['a_star'] = aStarRes;
     setLoading(false)
     setLog((prevLog) => ([...prevLog, newlog]));
@@ -233,13 +235,14 @@ setLoading(true)
     </main>
   }
 
-  if (loading)
-    return <main className="flex flex-col min-h-screen items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
-      <h1 className="font-mono">loading...</h1>
-      <Progress value={loadingState} className="w-[60%] min-w-48" ></Progress>
-    </main>
+
   return (
     <div className="min-h-screen">
+      {loading  && <div className="flex flex-col gap-6 justify-center items-center w-full h-full bg-slate-100/80 absolute z-20">
+        <h1>loading...</h1>
+        <Progress value={loadingState} className="w-64"></Progress>
+      </div>}
+
       <div className="w-full h-16 border-b flex justify-end px-6 items-center gap-6" >
         <div className="flex items-center space-x-2">
           <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
@@ -251,7 +254,9 @@ setLoading(true)
           location.reload();
         }}>リセット</Button>
       </div>
+
       <main className="relative flex  items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
+
 
         <Frame
           speed={speed}
