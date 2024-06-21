@@ -92,10 +92,13 @@ export const makeInitialGrid2 = (
   for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
     const randRow = Math.floor(Math.random() * rowN);
     const randCol = Math.floor(Math.random() * colN);
+    
     if (initialGrid[randRow][randCol] === GridElement.Empty) {
       initialGrid[randRow][randCol] = GridElement.Wall;
     }
   }
+
+  initialGrid[Math.floor(rowN/2)][Math.floor(colN/2)] = GridElement.Empty
 
   // for (let i = 3; i < colN - 3; i += 3) {
   //   initialGrid[3][i] = GridElement.Wall;
