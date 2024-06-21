@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
 import { ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { GearIcon, ReloadIcon } from "@radix-ui/react-icons";
 
 
 
@@ -285,7 +286,10 @@ export default function Home() {
         <Progress value={loadingState} className="w-64"></Progress>
       </div>}
 
-      <div className="w-full h-16 border-b flex justify-end px-3 items-center gap-3" >
+      <div className="w-full h-16 border-b flex justify-between px-6 items-center gap-3" >
+        <Button variant={'outline'} className="flex gap-2 items-center" onClick={()=>{
+          location.reload();
+        }}>リセット</Button>
         <div className="flex items-center space-x-2">
           <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
             setIsWeightShown(checked)
