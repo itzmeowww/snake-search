@@ -57,7 +57,7 @@ export default function Home() {
   const handleSetMousePos = (r: number, c: number) => { setMousePos({ row: r, col: c }) }
 
   const handleOnGridClick = async (r: number, c: number) => {
-
+setLoading(true)
     let newlog: { [key: string]: { frameN: number; dis: number } } = {};
 
     const bfsRes = await callAPINextMove('bfs', r, c);
@@ -74,11 +74,34 @@ export default function Home() {
 
     const aStarRes = await callAPINextMove('a_star', r, c);
     newlog['a_star'] = aStarRes;
-
+    setLoading(false)
     setLog((prevLog) => ([...prevLog, newlog]));
+
+    setFramesBFS(bfsRes.frames);
+    updateGridState(setStateBFS, bfsRes.snake);
+    setFramesDFS(dfsRes.frames);
+    updateGridState(setStateDFS, dfsRes.snake);
+    setFramesDijkstra(dijkstraRes.frames);
+    updateGridState(setStateDijkstra, dijkstraRes.snake);
+    setFramesBestFirstSearch(bestFirstSearchRes.frames);
+    updateGridState(setStateBestFirstSearch, bestFirstSearchRes.snake);
+    setFramesAStar(aStarRes.frames);
+    updateGridState(setStateAStar, aStarRes.snake);
+
   };
 
-  const callAPINextMove = async (algo: AlgoType, r: number, c: number): Promise<{ frameN: number, dis: number }> => {
+  const updateGridState = (setState: Dispatch<SetStateAction<{
+    snake: Pos[];
+    initialGrid: GridElement[][];
+  } | undefined>>,
+    snake: Pos[]) => {
+    setState((prev) => {
+      if (prev === undefined) return undefined;
+      return { ...prev, snake: snake };
+    });
+  };
+
+  const callAPINextMove = async (algo: AlgoType, r: number, c: number): Promise<{ frameN: number, dis: number, frames: GridElement[][][], snake: Pos[] }> => {
     let state: { snake: Pos[], initialGrid: GridElement[][] } | undefined;
     switch (algo) {
       case "bfs":
@@ -98,7 +121,7 @@ export default function Home() {
         break;
     }
 
-    if (!state) return { frameN: 0, dis: 0 }
+    if (!state) return { frameN: 0, dis: 0, frames: [], snake: [] }
 
     const apiUrl = '/api/nextMove';
 
@@ -120,44 +143,7 @@ export default function Home() {
 
     const data = await response.json();
 
-    const updateState = (setState: Dispatch<SetStateAction<{
-      snake: Pos[];
-      initialGrid: GridElement[][];
-    } | undefined>>, data: {
-      snake: Pos[];
-      initialGrid: GridElement[][];
-    }) => {
-      setState((prev) => {
-        if (prev === undefined) return undefined;
-        return { ...prev, snake: data.snake };
-      });
-    };
-
-    if (data.dis != -1)
-      switch (algo) {
-        case 'bfs':
-          setFramesBFS(data.frames);
-          updateState(setStateBFS, data);
-          break;
-        case 'dfs':
-          setFramesDFS(data.frames);
-          updateState(setStateDFS, data);
-          break;
-        case 'dijkstra':
-          setFramesDijkstra(data.frames);
-          updateState(setStateDijkstra, data);
-          break;
-        case 'best_first_search':
-          setFramesBestFirstSearch(data.frames);
-          updateState(setStateBestFirstSearch, data);
-          break;
-        case 'a_star':
-          setFramesAStar(data.frames);
-          updateState(setStateAStar, data);
-          break;
-      }
-
-    return { dis: data.dis, frameN: data.dis == -1 ? -1 : data.frames.length }
+    return { dis: data.dis, frameN: data.dis == -1 ? -1 : data.frames.length, frames: data.frames, snake: data.snake }
 
   }
   const initialize = () => {
