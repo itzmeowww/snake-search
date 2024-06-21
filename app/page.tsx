@@ -100,7 +100,7 @@ export default function Home() {
 
     if (!state) return { frameN: 0, dis: 0 }
 
-    const apiUrl = 'http://localhost:3000/api/nextMove';
+    const apiUrl = '/api/nextMove';
 
     const queryParams: Record<string, string> = {
       algo,
