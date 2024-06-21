@@ -2,7 +2,7 @@
 
 import Frame from "@/components/animation/frame";
 import { AlgoType, GridElement, Pos, cloneGrid, decodeGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeInitialGrid2, makeWeight } from "@/lib/search";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -19,7 +19,9 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
+import { ChevronsLeft, ChevronsRight } from 'lucide-react'
 
 
 
@@ -28,6 +30,37 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [loadingState, setLoadingState] = useState(0);
   const [showCard, setShowCard] = useState(true);
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [frame, setFrame] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout>();
+
+
+  const startPlay = () => {
+    if (!isRunning) {
+      setIsRunning(true);
+      intervalRef.current = setInterval(() => {
+        setFrame(prevTime => prevTime + 1);
+      }, 200 / speed);
+    }
+  };
+
+  const stopPlay = () => {
+    if (isRunning) {
+      clearInterval(intervalRef.current);
+      setIsRunning(false);
+    }
+  };
+
+  const handleButtonClick = () => {
+    if (isRunning) {
+      stopPlay();
+    } else {
+      startPlay();
+    }
+  };
+
+
 
 
   const [mousePos, setMousePos] = useState<Pos>({ row: -1, col: -1 })
@@ -58,6 +91,7 @@ export default function Home() {
 
   const handleOnGridClick = async (r: number, c: number) => {
     setLoadingState(0)
+
     setLoading(true)
     let newlog: { [key: string]: { frameN: number; dis: number } } = {};
 
@@ -78,6 +112,14 @@ export default function Home() {
     newlog['a_star'] = aStarRes;
     setLoading(false)
     setLog((prevLog) => ([...prevLog, newlog]));
+    setFrame(0)
+    stopPlay()
+    toast({
+      title: "準備できました",
+      description: "「再生」ボタンをクリックしてください", action: <ToastAction altText="play" onClick={() => {
+        startPlay()
+      }}>再生</ToastAction>,
+    })
 
     setFramesBFS(bfsRes.frames);
     updateGridState(setStateBFS, bfsRes.snake);
@@ -237,29 +279,52 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen relative">
-      {loading  && <div className="flex flex-col gap-6 justify-center items-center w-full h-screen bg-slate-100/80 fixed z-20">
+    <div className="min-h-screen relative pb-24">
+      {loading && <div className="flex flex-col gap-6 justify-center items-center w-full h-screen bg-slate-100/80 fixed z-30">
         <h1>loading...</h1>
         <Progress value={loadingState} className="w-64"></Progress>
       </div>}
 
-      <div className="w-full h-16 border-b flex justify-end px-6 items-center gap-6" >
+      <div className="w-full h-16 border-b flex justify-end px-3 items-center gap-3" >
         <div className="flex items-center space-x-2">
           <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
             setIsWeightShown(checked)
           }} />
           <Label htmlFor="show-weight">グラフの数値を表示</Label>
         </div>
-        <Button variant="outline" onClick={() => {
-          location.reload();
-        }}>リセット</Button>
       </div>
+
+      <div className="fixed bottom-6 w-full flex justify-center z-20">
+        <div className=" p-6 border pb-6 rounded-xl w-fit gap-6 flex shadow-lg bg-white">
+          {/* <Button variant="outline" onClick={() => {
+            location.reload();
+          }}>リセット</Button> */}
+
+          <Button variant={'outline'} onClick={() => {
+            stopPlay()
+            setFrame(0)
+          }}>
+            <ChevronsLeft />
+          </Button>
+          <Button onClick={() => {
+            handleButtonClick()
+          }}>{isRunning ? "再生中" : "再生"}</Button>
+
+          <Button variant={'outline'} onClick={() => {
+            stopPlay()
+            setFrame(99999)
+          }}>
+            <ChevronsRight />
+          </Button>
+        </div>
+      </div>
+
 
       <main className="relative flex  items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
 
 
         <Frame
-          speed={speed}
+          currentFrame={frame}
           log={log.map((x) => x["bfs"])}
           frames={framesBFS}
           title="BFS"
@@ -271,7 +336,7 @@ export default function Home() {
           showWeight={isWeightShown}
         />
         <Frame
-          speed={speed}
+          currentFrame={frame}
           log={log.map((x) => x["dfs"])}
           frames={framesDFS}
           title="DFS"
@@ -283,7 +348,7 @@ export default function Home() {
           showWeight={isWeightShown}
         />
         <Frame
-          speed={speed}
+          currentFrame={frame}
           log={log.map((x) => x["best_first_search"])}
           frames={framesBestFirstSearch}
           title="Best First Search"
@@ -296,7 +361,7 @@ export default function Home() {
         />
 
         <Frame
-          speed={speed}
+          currentFrame={frame}
           log={log.map((x) => x["dijkstra"])}
           frames={framesDijkstra}
           title="Dijkstra"
@@ -308,7 +373,7 @@ export default function Home() {
           showWeight={isWeightShown}
         />
         <Frame
-          speed={speed}
+          currentFrame={frame}
           log={log.map((x) => x["a_star"])}
           frames={framesAStar}
           title="A Star"

@@ -318,8 +318,10 @@ export const next_move = (
 
   let gridForSearch = cloneGrid(grid);
   snake.forEach((pos) => {
-    gridForSearch[pos.row][pos.col] = GridElement.OldSnake;
+    gridForSearch[pos.row][pos.col] = GridElement.Snake;
   });
+  gridForSearch[snake[0].row][snake[0].col] = GridElement.SnakeHead;
+  gridForSearch[applePos.row][applePos.col] = GridElement.Apple;
 
   let path: Pos[] = [];
 
@@ -386,6 +388,8 @@ export const next_move = (
 
     frames.push(currentFrame);
   }
+  frames.shift()
+  frames.unshift(gridForSearch)
   return { frames: frames, snake: snake, dis: searchRes.dis };
 };
 
