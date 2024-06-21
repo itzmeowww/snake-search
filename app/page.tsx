@@ -217,13 +217,13 @@ export default function Home() {
         </CardContent>
         <CardFooter>
           <Button className="w-full" onClick={() => {
-            if (size >= 5) {
+            if (size >= 5 && size <= 25) {
               setLoading(true)
               setShowCard(false)
             } else {
               toast({
                 title: "設定できません",
-                description: "サイズは５以上に設定してください",
+                description: "サイズは５以上25以下に設定してください",
                 variant: 'destructive'
               })
             }
@@ -237,8 +237,8 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen">
-      {loading  && <div className="flex flex-col gap-6 justify-center items-center w-full h-full bg-slate-100/80 absolute z-20">
+    <div className="min-h-screen relative">
+      {loading  && <div className="flex flex-col gap-6 justify-center items-center w-full h-screen bg-slate-100/80 fixed z-20">
         <h1>loading...</h1>
         <Progress value={loadingState} className="w-64"></Progress>
       </div>}

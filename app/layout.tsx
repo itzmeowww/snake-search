@@ -10,8 +10,8 @@ const fontSans = FontSans({
 })
 
 export const metadata: Metadata = {
-  title: "SNAKE",
-  description: "ヘビゲームで探索アルゴリズムを比較",
+  title: "ヘビゲームと探索アルゴリズム",
+  description: "ヘビゲームで探索アルゴリズムを比較してみよう",
 };
 
 export default function RootLayout({
