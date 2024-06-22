@@ -92,13 +92,13 @@ export const makeInitialGrid2 = (
   for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
     const randRow = Math.floor(Math.random() * rowN);
     const randCol = Math.floor(Math.random() * colN);
-    
+
     if (initialGrid[randRow][randCol] === GridElement.Empty) {
       initialGrid[randRow][randCol] = GridElement.Wall;
     }
   }
 
-  initialGrid[Math.floor(rowN/2)][Math.floor(colN/2)] = GridElement.Empty
+  initialGrid[Math.floor(rowN / 2)][Math.floor(colN / 2)] = GridElement.Empty;
 
   // for (let i = 3; i < colN - 3; i += 3) {
   //   initialGrid[3][i] = GridElement.Wall;
@@ -314,8 +314,8 @@ export const next_move = (
   const gridRowN = size;
   let frames: GridElement[][][] = [];
   let length = snake.length;
-  frames.push(grid);
 
+  frames.push(grid);
   let gridForSearch = cloneGrid(grid);
   snake.forEach((pos) => {
     gridForSearch[pos.row][pos.col] = GridElement.Snake;
@@ -337,7 +337,10 @@ export const next_move = (
   path = searchRes.path;
   let searchFrames = searchRes.frames;
   searchFrames = searchFrames.map((frame) => {
-    frame[snake[0].row][snake[0].col] = GridElement.OldSnake;
+    snake.forEach((spos) => {
+      frame[spos.row][spos.col] = GridElement.OldSnake;
+    });
+
     frame[applePos.row][applePos.col] = GridElement.Apple;
     return frame;
   });
@@ -388,8 +391,8 @@ export const next_move = (
 
     frames.push(currentFrame);
   }
-  frames.shift()
-  frames.unshift(gridForSearch)
+  frames.shift();
+  frames.unshift(gridForSearch);
   return { frames: frames, snake: snake, dis: searchRes.dis };
 };
 

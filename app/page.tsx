@@ -1,16 +1,15 @@
 'use client'
 
 import Frame from "@/components/animation/frame";
-import { AlgoType, GridElement, Pos, cloneGrid, decodeGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeInitialGrid2, makeWeight } from "@/lib/search";
+import { AlgoType, GridElement, Pos, cloneGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeInitialGrid2, makeWeight } from "@/lib/search";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -21,10 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
-import { ChevronsLeft, ChevronsRight } from 'lucide-react'
-import { GearIcon, ReloadIcon } from "@radix-ui/react-icons";
-
-
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export default function Home() {
   const { toast } = useToast()
@@ -70,8 +66,8 @@ export default function Home() {
   const [isWeightedGraph, setIsWeightedGraph] = useState(true)
   const [isRandomWall, setIsRandomWall] = useState(true)
   const [isWeightShown, setIsWeightShown] = useState(true)
+  const [isIconShown, setIsIconShown] = useState(true)
   const [weight, setWeight] = useState<number[][]>([])
-  // const [appleN, setAppleN] = useState(10)
 
   const [framesBFS, setFramesBFS] = useState<GridElement[][][]>([]);
   const [framesDFS, setFramesDFS] = useState<GridElement[][][]>([]);
@@ -219,26 +215,38 @@ export default function Home() {
     initialize()
   }, [showCard])
 
+  const algorithms = [
+    { title: "BFS", subtitle: "(幅優先探索)", algoKey: "bfs", frames: framesBFS },
+    { title: "DFS", subtitle: "(深さ優先探索)", algoKey: "dfs", frames: framesDFS },
+    { title: "Best First Search", subtitle: "(最良優先探索)", algoKey: "best_first_search", frames: framesBestFirstSearch },
+    { title: "Dijkstra", subtitle: "(最適探索)", algoKey: "dijkstra", frames: framesDijkstra },
+    { title: "A Star", subtitle: "(A*)", algoKey: "a_star", frames: framesAStar }
+  ];
+
+
 
   if (showCard) {
     return <main className="flex min-h-screen items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
       <Card>
         <CardHeader>
           <CardTitle>シミュレーションの設定</CardTitle>
-          <CardDescription>ゲームのサイズ</CardDescription>
         </CardHeader>
-        <CardContent className="gap-6 flex flex-col">
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="size">ゲームのサイズ</Label>
+        <CardContent className="gap-6 flex flex-col w-full">
+          <div className="grid w-full max-w-sm items-center gap-3">
+            <Label htmlFor="size">ゲームのサイズ (5-25)</Label>
             <Input type="number" min={5} id="size" value={size} onChange={(e) => { setSize(+e.target.value) }} />
           </div>
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="speed">速さ</Label>
-            <Slider id="speed" defaultValue={[5]} max={10} step={1} value={[speed]} onValueChange={((e) => {
-              setSpeed(e[0])
-            })} />
+          <div className="grid w-full max-w-md items-center gap-3">
+            <Label htmlFor="speed">アニメションの速さ</Label>
+            <div className="flex gap-3 justify-center items-center w-full">
+              <span className="w-12 text-xs">遅い</span>
+              <Slider id="speed" defaultValue={[5]} max={10} step={1} value={[speed]} onValueChange={((e) => {
+                setSpeed(e[0])
+              })} />
+              <span className="w-12 text-xs">早い</span>
+            </div>
           </div>
-          <div className="flex w-full max-w-sm items-center gap-1.5">
+          <div className="flex w-full max-w-sm items-center gap-3">
 
             <Checkbox id="weighted" checked={isWeightedGraph} defaultChecked={isWeightedGraph} onCheckedChange={(checked) => {
               if (checked !== 'indeterminate')
@@ -247,7 +255,7 @@ export default function Home() {
             </Checkbox><Label htmlFor="weighted">重み付きグラフ</Label>
 
           </div>
-          <div className="flex w-full max-w-sm items-center gap-1.5">
+          <div className="flex w-full max-w-sm items-center gap-3">
 
             <Checkbox id="walled" checked={isRandomWall} defaultChecked={isRandomWall} onCheckedChange={(checked) => {
               if (checked !== 'indeterminate')
@@ -279,6 +287,7 @@ export default function Home() {
   }
 
 
+
   return (
     <div className="min-h-screen relative pb-24">
       {loading && <div className="flex flex-col gap-6 justify-center items-center w-full h-screen bg-slate-100/80 fixed z-30">
@@ -287,19 +296,27 @@ export default function Home() {
       </div>}
 
       <div className="w-full h-16 border-b flex justify-between px-6 items-center gap-3" >
-        <Button variant={'outline'} className="flex gap-2 items-center" onClick={()=>{
+        <Button variant={'outline'} className="flex gap-2 items-center" onClick={() => {
           location.reload();
         }}>リセット</Button>
-        <div className="flex items-center space-x-2">
-          <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
-            setIsWeightShown(checked)
-          }} />
-          <Label htmlFor="show-weight">グラフの数値を表示</Label>
+        <div className="flex gap-6">
+          <div className="flex items-center space-x-2">
+            <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
+              setIsWeightShown(checked)
+            }} />
+            <Label htmlFor="show-weight">重さ</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch id="show-weight" checked={isIconShown} onCheckedChange={(checked) => {
+              setIsIconShown(checked)
+            }} />
+            <Label htmlFor="show-weight">アイコン</Label>
+          </div>
         </div>
       </div>
 
       <div className="fixed bottom-6 w-full flex justify-center z-20">
-        <div className=" p-6 border pb-6 rounded-xl w-fit gap-6 flex shadow-lg bg-white">
+        <div className=" py-4 border px-6 rounded-xl w-fit gap-6 flex shadow-lg bg-white">
           {/* <Button variant="outline" onClick={() => {
             location.reload();
           }}>リセット</Button> */}
@@ -326,69 +343,22 @@ export default function Home() {
 
       <main className="relative flex  items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
 
-
-        <Frame
-          currentFrame={frame}
-          log={log.map((x) => x["bfs"])}
-          frames={framesBFS}
-          title="BFS"
-          subtitle="(幅優先探索)"
-          onGridClick={handleOnGridClick}
-          mousePos={mousePos}
-          setMousePos={handleSetMousePos}
-          weight={weight}
-          showWeight={isWeightShown}
-        />
-        <Frame
-          currentFrame={frame}
-          log={log.map((x) => x["dfs"])}
-          frames={framesDFS}
-          title="DFS"
-          subtitle="(深さ優先探索)"
-          onGridClick={handleOnGridClick}
-          mousePos={mousePos}
-          setMousePos={handleSetMousePos}
-          weight={weight}
-          showWeight={isWeightShown}
-        />
-        <Frame
-          currentFrame={frame}
-          log={log.map((x) => x["best_first_search"])}
-          frames={framesBestFirstSearch}
-          title="Best First Search"
-          subtitle="(最良優先探索)"
-          onGridClick={handleOnGridClick}
-          mousePos={mousePos}
-          setMousePos={handleSetMousePos}
-          weight={weight}
-          showWeight={isWeightShown}
-        />
-
-        <Frame
-          currentFrame={frame}
-          log={log.map((x) => x["dijkstra"])}
-          frames={framesDijkstra}
-          title="Dijkstra"
-          subtitle="(最適探索)"
-          onGridClick={handleOnGridClick}
-          mousePos={mousePos}
-          setMousePos={handleSetMousePos}
-          weight={weight}
-          showWeight={isWeightShown}
-        />
-        <Frame
-          currentFrame={frame}
-          log={log.map((x) => x["a_star"])}
-          frames={framesAStar}
-          title="A Star"
-          subtitle="(A*)"
-          onGridClick={handleOnGridClick}
-          mousePos={mousePos}
-          setMousePos={handleSetMousePos}
-          weight={weight}
-          showWeight={isWeightShown}
-        />
-
+        {algorithms.map(({ title, subtitle, algoKey, frames }) => (
+          <Frame
+            key={title}
+            showIcon={isIconShown}
+            currentFrame={frame}
+            log={log.map((x) => x[algoKey])}
+            frames={frames}
+            title={title}
+            subtitle={subtitle}
+            onGridClick={handleOnGridClick}
+            mousePos={mousePos}
+            setMousePos={handleSetMousePos}
+            weight={weight}
+            showWeight={isWeightShown}
+          />
+        ))}
       </main>
     </div>
   );
