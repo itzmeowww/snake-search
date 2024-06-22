@@ -252,7 +252,7 @@ export default function Home() {
               if (checked !== 'indeterminate')
                 setIsWeightedGraph(checked)
             }}>
-            </Checkbox><Label htmlFor="weighted">重み付きグラフ</Label>
+            </Checkbox><Label htmlFor="weighted">コストあり</Label>
 
           </div>
           <div className="flex w-full max-w-sm items-center gap-3">

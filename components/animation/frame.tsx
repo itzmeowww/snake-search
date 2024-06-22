@@ -37,6 +37,7 @@ const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mouseP
                     else if (elem == GridElement.Apple) {
                       bgColor = 'bg-red-200'
                       content = showIcon ? '🍎' : showWeight ? weight[idxRow][idxCol] : '';
+                      canPlace = false
                     }
                     else if (elem == GridElement.Past) {
                       bgColor = 'bg-orange-300'
@@ -75,8 +76,10 @@ const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mouseP
                       <div
                         className={gridStyles}
                         key={`${idxRow}-${idxCol}`}
-                        onMouseOver={() => { setMousePos(idxRow, idxCol) }}
-                        onClick={() => { onGridClick(idxRow, idxCol) }}
+                        onMouseOver={() => {
+                          setMousePos(idxRow, idxCol)
+                        }}
+                        onClick={() => { if (canPlace) onGridClick(idxRow, idxCol) }}
                       >
                         {content}
                       </div>
