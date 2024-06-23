@@ -1,6 +1,6 @@
 import { GridElement, Pos } from "@/lib/search";
 
-const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mousePos, setMousePos, weight, showWeight, showIcon }: { currentFrame: number, log: { frameN: number, dis: number }[], frames: GridElement[][][], title: string, subtitle: string, onGridClick: (row: number, col: number) => void, mousePos: Pos, setMousePos: (r: number, c: number) => void, weight: number[][], showWeight: boolean, showIcon: boolean }) => {
+const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mousePos, setMousePos, weight, showWeight, isWeightedGraph, showIcon }: { currentFrame: number, log: { frameN: number, dis: number }[], frames: GridElement[][][], title: string, subtitle: string, onGridClick: (row: number, col: number) => void, mousePos: Pos, setMousePos: (r: number, c: number) => void, weight: number[][], showWeight: boolean, isWeightedGraph: boolean, showIcon: boolean }) => {
   const canPlaceHoverStyle = "hover:bg-yellow-400 hover:border-red-600 hover:border-2 hover:cursor-pointer ";
   const canPlaceStyle = "bg-yellow-400 border-red-600 border-2 ";
 
@@ -89,23 +89,36 @@ const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mouseP
               </div>
             })}
           </div>
-          <div className="grid grid-cols-2 mt-5">
+          <div className={`grid ${isWeightedGraph ? 'grid-cols-5' : 'grid-cols-3'} mt-5 `}>
             <div className="text-sm  text-center flex flex-col">
+              <span className="border px-3 bg-gray-100 font-bold">#</span>
+              {log.map((x, idx) => (
+                <span key={`fn${-idx}`} className={`border ${x.frameN == -1 && 'text-red-500'}`}>{idx + 1}</span>
+              ))}
+              <span className="border px-3 bg-gray-100 font-bold">計</span>
+
+            </div>
+
+            <div className="text-sm  text-center flex flex-col col-span-2">
               <span className="border px-3 bg-gray-100 font-bold">ステップ</span>
               {log.map((x, idx) => (
                 <span key={`fn${-idx}`} className={`border ${x.frameN == -1 && 'text-red-500'}`}>{x.frameN}</span>
               ))}
+              <span className="border px-3 bg-gray-100 font-bold">{log.reduce((total, x) => x.dis == -1 ? 0 : total + x.frameN, 0)}</span>
+
             </div>
-            <div className="text-sm text-center flex flex-col">
-              <span className="border px-3 bg-gray-100 font-bold">距離</span>
+            {isWeightedGraph && <div className="text-sm text-center flex flex-col col-span-2">
+              <span className="border px-3 bg-gray-100 font-bold">コスト</span>
               {log.map((x, idx) => (
                 <span key={`dis${-idx}`} className={`border ${x.dis == -1 && 'text-red-500'}`}>{x.dis}</span>
+
               ))}
-            </div>
+              <span className="border px-3 bg-gray-100 font-bold">{log.reduce((total, x) => x.dis == -1 ?total: total + x.dis, 0)}</span>
+            </div>}
           </div>
         </>
       }
-    </div>
+    </div >
   );
 }
 

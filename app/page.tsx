@@ -271,7 +271,7 @@ export default function Home() {
             if (size >= 5 && size <= 25) {
               setLoading(true)
               setShowCard(false)
-              if(!isWeightedGraph){
+              if (!isWeightedGraph) {
                 setIsWeightShown(false)
               }
             } else {
@@ -303,12 +303,12 @@ export default function Home() {
           location.reload();
         }}>リセット</Button>
         <div className="flex gap-6">
-          <div className="flex items-center space-x-2">
+          {isWeightedGraph && <div className="flex items-center space-x-2">
             <Switch id="show-weight" checked={isWeightShown} onCheckedChange={(checked) => {
               setIsWeightShown(checked)
             }} />
             <Label htmlFor="show-weight">数値</Label>
-          </div>
+          </div>}
           <div className="flex items-center space-x-2">
             <Switch id="show-weight" checked={isIconShown} onCheckedChange={(checked) => {
               setIsIconShown(checked)
@@ -359,6 +359,7 @@ export default function Home() {
             mousePos={mousePos}
             setMousePos={handleSetMousePos}
             weight={weight}
+            isWeightedGraph={isWeightedGraph}
             showWeight={isWeightShown}
           />
         ))}
