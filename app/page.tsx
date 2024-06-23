@@ -1,8 +1,8 @@
 'use client'
 
 import Frame from "@/components/animation/frame";
-import { AlgoType, GridElement, Pos, cloneGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeWeight } from "@/lib/search";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { AlgoType, Pos, next_move } from "@/lib/search";
+import { useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -21,8 +21,17 @@ import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { GridElement, cloneGrid, makeInitialGrid, makeWeight } from "@/lib/snake";
 
 export default function Home() {
+
+  const algorithms: { title: string, subtitle: string, algoKey: AlgoType }[] = [
+    { title: "BFS", subtitle: "(幅優先探索)", algoKey: "bfs" },
+    { title: "DFS", subtitle: "(深さ優先探索)", algoKey: "dfs" },
+    { title: "Best First Search", subtitle: "(最良優先探索)", algoKey: "best_first_search" },
+    { title: "Dijkstra", subtitle: "(最適探索)", algoKey: "dijkstra" },
+    { title: "A Star", subtitle: "(A*)", algoKey: "a_star" }
+  ];
   const { toast } = useToast()
   const [loading, setLoading] = useState(true);
   const [loadingState, setLoadingState] = useState(0);
@@ -37,7 +46,12 @@ export default function Home() {
     if (!isRunning) {
       setIsRunning(true);
       intervalRef.current = setInterval(() => {
-        setFrame(prevTime => prevTime + 1);
+        setFrame(prevTime => {
+          return prevTime + 1
+        });
+
+
+
       }, 200 / speed);
     }
   };
@@ -59,7 +73,6 @@ export default function Home() {
 
 
 
-
   const [mousePos, setMousePos] = useState<Pos>({ row: -1, col: -1 })
   const [size, setSize] = useState(11)
   const [speed, setSpeed] = useState(5)
@@ -69,121 +82,61 @@ export default function Home() {
   const [isIconShown, setIsIconShown] = useState(true)
   const [weight, setWeight] = useState<number[][]>([])
 
-  const [framesBFS, setFramesBFS] = useState<GridElement[][][]>([]);
-  const [framesDFS, setFramesDFS] = useState<GridElement[][][]>([]);
-  const [framesDijkstra, setFramesDijkstra] = useState<GridElement[][][]>([]);
-  const [framesBestFirstSearch, setFramesBestFirstSearch] = useState<GridElement[][][]>([]);
-  const [framesAStar, setFramesAStar] = useState<GridElement[][][]>([]);
-
+  const initialSelect: { [key: string]: boolean } = {}
+  algorithms.forEach((algorithm) => { initialSelect[algorithm.algoKey] = true })
+  const [selected, setSelected] = useState<{ [key: string]: boolean }>(initialSelect)
   const [log, setLog] = useState<{ [key: string]: { frameN: number, dis: number } }[]>([])
-
-  const [stateBFS, setStateBFS] = useState<{ snake: Pos[], initialGrid: GridElement[][] }>();
-  const [stateDFS, setStateDFS] = useState<{ snake: Pos[], initialGrid: GridElement[][] }>();
-  const [stateDijkstra, setStateDijkstra] = useState<{ snake: Pos[], initialGrid: GridElement[][] }>();
-  const [stateBestFirstSearch, setStateBestFirstSearch] = useState<{ snake: Pos[], initialGrid: GridElement[][] }>();
-  const [stateAStar, setStateAStar] = useState<{ snake: Pos[], initialGrid: GridElement[][] }>();
+  const [states, setStates] = useState<{ [key: string]: { snake: Pos[], frames: GridElement[][][] } }>({});
+  const [initialGrid, setInitialGird] = useState<GridElement[][]>()
 
 
   const handleSetMousePos = (r: number, c: number) => { setMousePos({ row: r, col: c }) }
-
   const handleOnGridClick = async (r: number, c: number) => {
-    setLoadingState(0)
+    let cantPlace = false;
 
+    Object.keys(states).map((key) => {
+      if (selected[key]) {
+        const state = states[key];
+        if ((initialGrid && initialGrid[r][c] === GridElement.Wall) || state.snake.some(({ row, col }) => row === r && col === c)) {
+          if (!cantPlace) toast({ title: 'ここはダメです', description: '他の場所にアップルを置いてくさい', variant: 'destructive' })
+          cantPlace = true
+        }
+      }
+    });
+    if (cantPlace) return
+
+    stopPlay()
+    setLoadingState(0)
     setLoading(true)
     let new_log: { [key: string]: { frameN: number; dis: number } } = {};
+    let new_states: { [key: string]: { frames: GridElement[][][], snake: Pos[] } } = {}
 
-    const bfsRes = await callAPINextMove('bfs', r, c);
-    new_log['bfs'] = bfsRes;
-    setLoadingState(10)
-    const dfsRes = await callAPINextMove('dfs', r, c);
-    new_log['dfs'] = dfsRes;
-    setLoadingState(30)
-    const dijkstraRes = await callAPINextMove('dijkstra', r, c);
-    new_log['dijkstra'] = dijkstraRes;
-    setLoadingState(50)
-    const bestFirstSearchRes = await callAPINextMove('best_first_search', r, c);
-    new_log['best_first_search'] = bestFirstSearchRes;
-    setLoadingState(70)
-    const aStarRes = await callAPINextMove('a_star', r, c);
-    setLoadingState(100)
-    new_log['a_star'] = aStarRes;
-    setLoading(false)
+    algorithms.forEach((algorithm, idx) => {
+      if (selected[algorithm.algoKey]) {
+        const res = callNextMove(algorithm.algoKey, r, c);
+        new_log[algorithm.algoKey] = res;
+        new_states[algorithm.algoKey] = res;
+      }
+      setLoadingState(idx * 100 / algorithms.length)
+    })
+
     setLog((prevLog) => ([...prevLog, new_log]));
+    setStates(new_states)
     setFrame(0)
-    stopPlay()
+    setLoading(false)
+
     toast({
       title: "準備できました",
       description: "「再生」ボタンをクリックしてください", action: <ToastAction altText="play" onClick={() => {
         startPlay()
       }}>再生</ToastAction>,
     })
-
-    setFramesBFS(bfsRes.frames);
-    updateGridState(setStateBFS, bfsRes.snake);
-    setFramesDFS(dfsRes.frames);
-    updateGridState(setStateDFS, dfsRes.snake);
-    setFramesDijkstra(dijkstraRes.frames);
-    updateGridState(setStateDijkstra, dijkstraRes.snake);
-    setFramesBestFirstSearch(bestFirstSearchRes.frames);
-    updateGridState(setStateBestFirstSearch, bestFirstSearchRes.snake);
-    setFramesAStar(aStarRes.frames);
-    updateGridState(setStateAStar, aStarRes.snake);
-
   };
 
-  const updateGridState = (setState: Dispatch<SetStateAction<{
-    snake: Pos[];
-    initialGrid: GridElement[][];
-  } | undefined>>,
-    snake: Pos[]) => {
-    setState((prev) => {
-      if (prev === undefined) return undefined;
-      return { ...prev, snake: snake };
-    });
-  };
-
-  const callAPINextMove = async (algo: AlgoType, r: number, c: number): Promise<{ frameN: number, dis: number, frames: GridElement[][][], snake: Pos[] }> => {
-    let state: { snake: Pos[], initialGrid: GridElement[][] } | undefined;
-    switch (algo) {
-      case "bfs":
-        state = stateBFS;
-        break;
-      case "dfs":
-        state = stateDFS;
-        break;
-      case "dijkstra":
-        state = stateDijkstra;
-        break;
-      case "best_first_search":
-        state = stateBestFirstSearch;
-        break;
-      case "a_star":
-        state = stateAStar;
-        break;
-    }
-
-    if (!state) return { frameN: 0, dis: 0, frames: [], snake: [] }
-
-    const apiUrl = '/api/nextMove';
-
-    const queryParams: Record<string, string> = {
-      algo,
-      size: size.toString(),
-      applePos: encodePos({ row: r, col: c }),
-      snake: encodeSnake(state.snake),
-      initialGrid: encodeGrid(state.initialGrid),
-      weight: encodeWeight(weight)
-    };
-
-    const response = await fetch(`${apiUrl}?${new URLSearchParams(queryParams).toString()}`);
-
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
+  const callNextMove = (algo: AlgoType, r: number, c: number): { frameN: number, dis: number, frames: GridElement[][][], snake: Pos[] } => {
+    let state = states[algo]
+    if (!state || !initialGrid) return { frameN: -1, dis: -1, frames: [], snake: [] }
+    const data = next_move(algo, size, cloneGrid(initialGrid), weight, [...state.snake], { row: r, col: c })
     return { dis: data.dis, frameN: data.dis == -1 ? -1 : data.frames.length, frames: data.frames, snake: data.snake }
 
   }
@@ -192,36 +145,42 @@ export default function Home() {
     const weight = makeWeight(size, size, isWeightedGraph)
     setWeight(weight)
     const initialGrid = makeInitialGrid(size, size, isRandomWall)
-    let initialState = { initialGrid: initialGrid, snake: [{ row: Math.floor(size / 2), col: Math.floor(size / 2) }] }
-    setStateBFS(initialState)
-    setStateDFS(initialState)
-    setStateDijkstra(initialState)
-    setStateBestFirstSearch(initialState)
-    setStateAStar(initialState)
+    setInitialGird(initialGrid)
+
+    const snake: Pos[] = [{ row: Math.floor(size / 2), col: Math.floor(size / 2) }]
 
     const initialGridFrame = cloneGrid(initialGrid)
-    initialGridFrame[initialState.snake[0].row][initialState.snake[0].col] = GridElement.SnakeHead
+    initialGridFrame[snake[0].row][snake[0].col] = GridElement.SnakeHead
+    const initialState = { frames: [initialGridFrame], snake: snake }
 
-    setFramesBFS([initialGridFrame]);
-    setFramesDFS([initialGridFrame]);
-    setFramesDijkstra([initialGridFrame]);
-    setFramesBestFirstSearch([initialGridFrame]);
-    setFramesAStar([initialGridFrame]);
+    let new_states: { [key: string]: { frames: GridElement[][][], snake: Pos[] } } = {}
 
+    algorithms.forEach((algorithm, idx) => {
+      if (selected[algorithm.algoKey]) {
+        new_states[algorithm.algoKey] = initialState;
+        setLoadingState((idx + 1) * 100 / algorithms.length)
+      }
+    })
+    setStates(new_states)
     setLoading(false)
   }
   useEffect(() => {
     if (showCard) return
     initialize()
   }, [showCard])
+  useEffect(() => {
+    let done = true
+    algorithms.forEach((algorithm) => {
+      if (states[algorithm.algoKey] && states[algorithm.algoKey].frames.length > frame && selected[algorithm.algoKey]) {
+        done = false
+      }
+    })
+    if (done) {
+      stopPlay()
+    }
+  }, [frame, states])
 
-  const algorithms = [
-    { title: "BFS", subtitle: "(幅優先探索)", algoKey: "bfs", frames: framesBFS },
-    { title: "DFS", subtitle: "(深さ優先探索)", algoKey: "dfs", frames: framesDFS },
-    { title: "Best First Search", subtitle: "(最良優先探索)", algoKey: "best_first_search", frames: framesBestFirstSearch },
-    { title: "Dijkstra", subtitle: "(最適探索)", algoKey: "dijkstra", frames: framesDijkstra },
-    { title: "A Star", subtitle: "(A*)", algoKey: "a_star", frames: framesAStar }
-  ];
+
 
 
 
@@ -233,42 +192,63 @@ export default function Home() {
         </CardHeader>
         <CardContent className="gap-6 flex flex-col w-full">
           <div className="grid w-full max-w-sm items-center gap-3">
-            <Label htmlFor="size">ゲームのサイズ (5-25)</Label>
+            <Label htmlFor="size">ゲームのサイズ (5-45)</Label>
             <Input type="number" min={5} id="size" value={size} onChange={(e) => { setSize(+e.target.value) }} />
           </div>
           <div className="grid w-full max-w-md items-center gap-3">
             <Label htmlFor="speed">アニメションの速さ</Label>
             <div className="flex gap-3 justify-center items-center w-full">
-              <span className="w-12 text-xs">遅い</span>
+              <span className="w-12 text-xs text-right">遅い</span>
               <Slider id="speed" defaultValue={[5]} max={10} step={1} value={[speed]} onValueChange={((e) => {
                 setSpeed(e[0])
               })} />
               <span className="w-12 text-xs">早い</span>
             </div>
           </div>
-          <div className="flex w-full max-w-sm items-center gap-3">
+          <div className="grid grid-cols-2">
+            <div className="flex w-full max-w-sm items-center gap-3">
 
-            <Checkbox id="weighted" checked={isWeightedGraph} defaultChecked={isWeightedGraph} onCheckedChange={(checked) => {
-              if (checked !== 'indeterminate')
-                setIsWeightedGraph(checked)
-            }}>
-            </Checkbox><Label htmlFor="weighted">コストあり</Label>
+              <Checkbox id="weighted" checked={isWeightedGraph} defaultChecked={isWeightedGraph} onCheckedChange={(checked) => {
+                if (checked !== 'indeterminate')
+                  setIsWeightedGraph(checked)
+              }}>
+              </Checkbox><Label htmlFor="weighted">コストあり</Label>
 
+            </div>
+            <div className="flex w-full max-w-sm items-center gap-3">
+
+              <Checkbox id="walled" checked={isRandomWall} defaultChecked={isRandomWall} onCheckedChange={(checked) => {
+                if (checked !== 'indeterminate')
+                  setIsRandomWall(checked)
+              }}>
+              </Checkbox><Label htmlFor="walled">ランダムな壁</Label>
+
+            </div>
           </div>
-          <div className="flex w-full max-w-sm items-center gap-3">
 
-            <Checkbox id="walled" checked={isRandomWall} defaultChecked={isRandomWall} onCheckedChange={(checked) => {
-              if (checked !== 'indeterminate')
-                setIsRandomWall(checked)
-            }}>
-            </Checkbox><Label htmlFor="walled">ランダムな壁</Label>
+          <Label>アルゴリズム</Label>
 
+          <div className="grid grid-cols-2 gap-3">
+            {algorithms.map((algorithm) => {
+              return <div className="flex w-full max-w-sm items-center gap-3" key={`algo-${algorithm.algoKey}`}>
+
+                <Checkbox id={`cb-algo-${algorithm.algoKey}`} checked={selected[algorithm.algoKey]} defaultChecked={true} onCheckedChange={(checked) => {
+                  if (checked !== 'indeterminate')
+                    setSelected((prev) => {
+                      const temp = { ...prev }
+                      temp[algorithm.algoKey] = checked
+                      return temp;
+                    })
+                }}>
+                </Checkbox><Label htmlFor={`cb-algo-${algorithm.algoKey}`}>{algorithm.title}</Label>
+
+              </div>
+            })}
           </div>
-
         </CardContent>
         <CardFooter>
           <Button className="w-full" onClick={() => {
-            if (size >= 5 && size <= 25) {
+            if (size >= 5 && size <= 45) {
               setLoading(true)
               setShowCard(false)
               if (!isWeightedGraph) {
@@ -320,10 +300,6 @@ export default function Home() {
 
       <div className="fixed bottom-6 w-full flex justify-center z-20">
         <div className=" py-4 border px-6 rounded-xl w-fit gap-6 flex shadow-lg bg-white">
-          {/* <Button variant="outline" onClick={() => {
-            location.reload();
-          }}>リセット</Button> */}
-
           <Button variant={'outline'} onClick={() => {
             stopPlay()
             setFrame(0)
@@ -336,7 +312,7 @@ export default function Home() {
 
           <Button variant={'outline'} onClick={() => {
             stopPlay()
-            setFrame(99999)
+            setFrame(99999999)
           }}>
             <ChevronsRight />
           </Button>
@@ -346,23 +322,26 @@ export default function Home() {
 
       <main className="relative flex  items-center justify-center p-12 w-fit mx-auto gap-4 flex-wrap">
 
-        {algorithms.map(({ title, subtitle, algoKey, frames }) => (
-          <Frame
-            key={title}
-            showIcon={isIconShown}
-            currentFrame={frame}
-            log={log.map((x) => x[algoKey])}
-            frames={frames}
-            title={title}
-            subtitle={subtitle}
-            onGridClick={handleOnGridClick}
-            mousePos={mousePos}
-            setMousePos={handleSetMousePos}
-            weight={weight}
-            isWeightedGraph={isWeightedGraph}
-            showWeight={isWeightShown}
-          />
+        {algorithms.map(({ title, subtitle, algoKey }) => (
+          states[algoKey] && selected[algoKey] && (
+            <Frame
+              key={title}
+              showIcon={isIconShown}
+              currentFrame={frame}
+              log={log.map((x) => x[algoKey])}
+              frames={states[algoKey].frames}
+              title={title}
+              subtitle={subtitle}
+              onGridClick={handleOnGridClick}
+              mousePos={mousePos}
+              setMousePos={handleSetMousePos}
+              weight={weight}
+              isWeightedGraph={isWeightedGraph}
+              showWeight={isWeightShown}
+            />
+          )
         ))}
+
       </main>
     </div>
   );

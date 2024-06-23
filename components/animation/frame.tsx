@@ -1,4 +1,5 @@
-import { GridElement, Pos } from "@/lib/search";
+import { Pos } from "@/lib/search";
+import { GridElement } from "@/lib/snake";
 
 const Frame = ({ log, frames, currentFrame, title, subtitle, onGridClick, mousePos, setMousePos, weight, showWeight, isWeightedGraph, showIcon }: { currentFrame: number, log: { frameN: number, dis: number }[], frames: GridElement[][][], title: string, subtitle: string, onGridClick: (row: number, col: number) => void, mousePos: Pos, setMousePos: (r: number, c: number) => void, weight: number[][], showWeight: boolean, isWeightedGraph: boolean, showIcon: boolean }) => {
   const canPlaceHoverStyle = "hover:bg-yellow-400 hover:border-red-600 hover:border-2 hover:cursor-pointer ";

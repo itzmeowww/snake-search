@@ -1,21 +1,4 @@
-import { Grid } from "lucide-react";
-
-export enum GridElement {
-  Wall,
-  Empty,
-  Snake,
-  SnakeHead,
-  Apple,
-  Path,
-  PathL,
-  PathR,
-  PathU,
-  PathD,
-  Searched,
-  Visited,
-  OldSnake,
-  Past,
-}
+import { GridElement, cloneGrid } from "./snake";
 
 export type Pos = {
   row: number;
@@ -34,63 +17,8 @@ type PosWithWeight = {
   weight: number;
 };
 
-export const makeInitialGrid = (
-  rowN: number,
-  colN: number,
-  randomWall = false
-): GridElement[][] => {
-  let initialGrid: GridElement[][] = [];
-  for (let i = 0; i < rowN; i++) {
-    initialGrid.push(Array(colN).fill(GridElement.Empty));
-  }
-
-  for (let i = 0; i < rowN; i++) {
-    initialGrid[i][0] = GridElement.Wall;
-    initialGrid[i][colN - 1] = GridElement.Wall;
-  }
-
-  for (let i = 0; i < colN; i++) {
-    initialGrid[0][i] = GridElement.Wall;
-    initialGrid[rowN - 1][i] = GridElement.Wall;
-  }
-  if (randomWall) {
-    for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
-      const randRow = Math.floor(Math.random() * rowN);
-      const randCol = Math.floor(Math.random() * colN);
-
-      if (initialGrid[randRow][randCol] === GridElement.Empty) {
-        initialGrid[randRow][randCol] = GridElement.Wall;
-      }
-    }
-
-    initialGrid[Math.floor(rowN / 2)][Math.floor(colN / 2)] = GridElement.Empty;
-  }
-  return initialGrid;
-};
-
-export const cloneGrid = (g: GridElement[][]) => g.map((row) => [...row]);
-
 const rr = [-1, 0, 1, 0];
 const cc = [0, -1, 0, 1];
-
-export const makeWeight = (
-  rowN: number,
-  colN: number,
-  random = false
-): number[][] => {
-  let ret: number[][] = [];
-
-  for (let i = 0; i < rowN; i++) {
-    let row: number[] = [];
-    for (let j = 0; j < colN; j++) {
-      if (random) row.push(Math.floor(Math.random() * 9));
-      else row.push(0);
-    }
-    ret.push(row);
-  }
-
-  return ret;
-};
 
 const searchByAlgo = (
   g: GridElement[][],
@@ -104,8 +32,7 @@ const searchByAlgo = (
   let openList: PosWithWeight[] = [
     {
       pos: s,
-      weight:
-        algo == "best_first_search" || algo == "a_star" ? heuristic(s, t) : 0,
+      weight: 0,
     },
   ];
   let closedList: PosWithWeight[] = [];
@@ -208,6 +135,7 @@ const searchByAlgo = (
             }
             cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
           } else if (algo == "a_star") {
+            let should_add = false;
             if (indexInOpenList != -1) {
               const elemInOpenList = openList[indexInOpenList];
               if (
@@ -215,11 +143,7 @@ const searchByAlgo = (
                 currentState.weight + cost + heuristic(new_pos, t)
               ) {
                 openList.splice(indexInOpenList, 1);
-                openList.push({
-                  pos: new_pos,
-                  weight: currentState.weight + cost,
-                });
-                cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
+                should_add = true;
               }
             }
 
@@ -230,12 +154,16 @@ const searchByAlgo = (
                 currentState.weight + cost + heuristic(new_pos, t)
               ) {
                 closedList.splice(indexInClosedList, 1);
-                openList.push({
-                  pos: new_pos,
-                  weight: currentState.weight + cost,
-                });
-                cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
+                should_add = true;
               }
+            }
+
+            if (should_add) {
+              openList.push({
+                pos: new_pos,
+                weight: currentState.weight + cost,
+              });
+              cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
             }
           }
         }
@@ -341,80 +269,4 @@ export const next_move = (
   frames.shift();
   frames.unshift(gridForSearch);
   return { frames: frames, snake: snake, dis: searchRes.dis };
-};
-
-// The following part was created by ChatGPT
-export const encodeGrid = (grid: GridElement[][]): string => {
-  return grid
-    .flatMap((row) => row)
-    .map((element) => element.toString())
-    .join(",");
-};
-
-export const decodeGrid = (
-  encodedString: string,
-  rowN: number,
-  colN: number
-): GridElement[][] => {
-  let grid: GridElement[][] = [];
-  let index = 0;
-
-  for (let i = 0; i < rowN; i++) {
-    let row: GridElement[] = [];
-    for (let j = 0; j < colN; j++) {
-      row.push(parseInt(encodedString.split(",")[index]) as GridElement);
-      index++;
-    }
-    grid.push(row);
-  }
-
-  return grid;
-};
-
-export const encodeWeight = (grid: GridElement[][]): string => {
-  return grid
-    .flatMap((row) => row)
-    .map((element) => element.toString())
-    .join("");
-};
-
-export const decodeWeight = (
-  encodedString: string,
-  rowN: number,
-  colN: number
-): number[][] => {
-  let grid: GridElement[][] = [];
-  let index = 0;
-
-  for (let i = 0; i < rowN; i++) {
-    let row: GridElement[] = [];
-    for (let j = 0; j < colN; j++) {
-      row.push(parseInt(encodedString[index]) as number);
-      index++;
-    }
-    grid.push(row);
-  }
-
-  return grid;
-};
-
-export const encodePos = (pos: Pos): string => {
-  return `${pos.row},${pos.col}`;
-};
-export const decodePos = (pos: string): Pos => {
-  return {
-    row: parseInt(pos.split(",")[0]),
-    col: parseInt(pos.split(",")[1]),
-  } as Pos;
-};
-
-export const encodeSnake = (pos: Pos[]): string => {
-  return pos.map((p) => `${p.row},${p.col}`).join(";");
-};
-
-export const decodeSnake = (pos: string): Pos[] => {
-  return pos.split(";").map((p) => {
-    const [row, col] = p.split(",").map(Number);
-    return { row, col };
-  });
 };
