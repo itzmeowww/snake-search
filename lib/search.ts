@@ -1,3 +1,5 @@
+import { Grid } from "lucide-react";
+
 export enum GridElement {
   Wall,
   Empty,
@@ -27,9 +29,15 @@ export type AlgoType =
   | "best_first_search"
   | "a_star";
 
+type PosWithWeight = {
+  pos: Pos;
+  weight: number;
+};
+
 export const makeInitialGrid = (
   rowN: number,
-  colN: number
+  colN: number,
+  randomWall = false
 ): GridElement[][] => {
   let initialGrid: GridElement[][] = [];
   for (let i = 0; i < rowN; i++) {
@@ -45,87 +53,26 @@ export const makeInitialGrid = (
     initialGrid[0][i] = GridElement.Wall;
     initialGrid[rowN - 1][i] = GridElement.Wall;
   }
-  // for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
-  //   const randRow = Math.floor(Math.random() * rowN);
-  //   const randCol = Math.floor(Math.random() * colN);
-  //   if (initialGrid[randRow][randCol] === GridElement.Empty) {
-  //     initialGrid[randRow][randCol] = GridElement.Wall;
-  //   }
-  // }
+  if (randomWall) {
+    for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
+      const randRow = Math.floor(Math.random() * rowN);
+      const randCol = Math.floor(Math.random() * colN);
 
-  // for (let i = 3; i < colN - 3; i += 3) {
-  //   initialGrid[3][i] = GridElement.Wall;
-  //   initialGrid[rowN - 3][i - 1] = GridElement.Wall;
-  // }
-
-  // for (let i = 3; i < colN - 3; i += 4) {
-  //   initialGrid[4][i] = GridElement.Wall;
-  //   initialGrid[rowN - 5][i - 1] = GridElement.Wall;
-  // }
-
-  // for (let i = 4; i < colN - 2; i += 3) {
-  //   initialGrid[5][i] = GridElement.Wall;
-  //   initialGrid[rowN - 6][i - 2] = GridElement.Wall;
-  // }
-
-  return initialGrid;
-};
-
-export const makeInitialGrid2 = (
-  rowN: number,
-  colN: number
-): GridElement[][] => {
-  let initialGrid: GridElement[][] = [];
-  for (let i = 0; i < rowN; i++) {
-    initialGrid.push(Array(colN).fill(GridElement.Empty));
-  }
-
-  for (let i = 0; i < rowN; i++) {
-    initialGrid[i][0] = GridElement.Wall;
-    initialGrid[i][colN - 1] = GridElement.Wall;
-  }
-
-  for (let i = 0; i < colN; i++) {
-    initialGrid[0][i] = GridElement.Wall;
-    initialGrid[rowN - 1][i] = GridElement.Wall;
-  }
-  for (let i = 0; i < Math.floor((rowN * colN) / 5); i++) {
-    const randRow = Math.floor(Math.random() * rowN);
-    const randCol = Math.floor(Math.random() * colN);
-
-    if (initialGrid[randRow][randCol] === GridElement.Empty) {
-      initialGrid[randRow][randCol] = GridElement.Wall;
+      if (initialGrid[randRow][randCol] === GridElement.Empty) {
+        initialGrid[randRow][randCol] = GridElement.Wall;
+      }
     }
+
+    initialGrid[Math.floor(rowN / 2)][Math.floor(colN / 2)] = GridElement.Empty;
   }
-
-  initialGrid[Math.floor(rowN / 2)][Math.floor(colN / 2)] = GridElement.Empty;
-
-  // for (let i = 3; i < colN - 3; i += 3) {
-  //   initialGrid[3][i] = GridElement.Wall;
-  //   initialGrid[rowN - 3][i - 1] = GridElement.Wall;
-  // }
-
-  // for (let i = 3; i < colN - 3; i += 4) {
-  //   initialGrid[4][i] = GridElement.Wall;
-  //   initialGrid[rowN - 5][i - 1] = GridElement.Wall;
-  // }
-
-  // for (let i = 4; i < colN - 2; i += 3) {
-  //   initialGrid[5][i] = GridElement.Wall;
-  //   initialGrid[rowN - 6][i - 2] = GridElement.Wall;
-  // }
-
   return initialGrid;
 };
+
 export const cloneGrid = (g: GridElement[][]) => g.map((row) => [...row]);
 
 const rr = [-1, 0, 1, 0];
 const cc = [0, -1, 0, 1];
 
-type PosWithWeight = {
-  pos: Pos;
-  weight: number;
-};
 export const makeWeight = (
   rowN: number,
   colN: number,
@@ -154,10 +101,17 @@ const searchByAlgo = (
   algo: AlgoType,
   weight: number[][]
 ): { path: Pos[]; frames: GridElement[][][]; dis: number } => {
-  let openList: PosWithWeight[] = [{ pos: s, weight: 0 }];
+  let openList: PosWithWeight[] = [
+    {
+      pos: s,
+      weight:
+        algo == "best_first_search" || algo == "a_star" ? heuristic(s, t) : 0,
+    },
+  ];
   let closedList: PosWithWeight[] = [];
   let cameFrom: Map<string, Pos> = new Map();
   let frames: GridElement[][][] = [];
+
   while (openList.length > 0) {
     if (algo == "dijkstra") {
       openList.sort((a, b) => a.weight - b.weight);
@@ -169,79 +123,78 @@ const searchByAlgo = (
           a.weight + heuristic(a.pos, t) - (b.weight + heuristic(b.pos, t))
       );
     }
-    let f = openList[0];
-    closedList.push(f);
+    let currentState = openList[0];
+    closedList.push(currentState);
     let newGrid: GridElement[][] = cloneGrid(g);
     closedList.forEach((x) => {
       newGrid[x.pos.row][x.pos.col] = GridElement.Visited;
     });
     frames.push(newGrid);
 
-    if (f.pos.row === t.row && f.pos.col === t.col) {
-      let temp: Pos | undefined = f.pos;
+    if (currentState.pos.row === t.row && currentState.pos.col === t.col) {
+      let temp: Pos | undefined = currentState.pos;
       let path: Pos[] = [];
       while (temp) {
         path.push(temp);
         temp = cameFrom.get(`${temp.row},${temp.col}`);
       }
-      return { path: path.reverse(), frames: frames, dis: f.weight };
+      return { path: path.reverse(), frames: frames, dis: currentState.weight };
     }
     openList = openList.slice(1);
     for (let k = 0; k < 4; k++) {
-      const new_r = rr[k] + f.pos.row;
-      const new_c = cc[k] + f.pos.col;
-
+      const new_pos: Pos = {
+        row: rr[k] + currentState.pos.row,
+        col: cc[k] + currentState.pos.col,
+      };
       const cost = Math.abs(
-        weight[new_r][new_c] - weight[f.pos.row][f.pos.col]
+        weight[new_pos.row][new_pos.col] -
+          weight[currentState.pos.row][currentState.pos.col]
       );
 
-      if (0 <= new_r && new_r < rowN && 0 <= new_c && new_c < colN) {
+      if (
+        0 <= new_pos.row &&
+        new_pos.row < rowN &&
+        0 <= new_pos.col &&
+        new_pos.col < colN
+      ) {
+        const indexInClosedList = closedList.findIndex(
+          (x) => x.pos.col === new_pos.col && x.pos.row === new_pos.row
+        );
+
+        const indexInOpenList = openList.findIndex(
+          (x) => x.pos.col === new_pos.col && x.pos.row === new_pos.row
+        );
+
         if (
-          g[new_r][new_c] === GridElement.Empty ||
-          g[new_r][new_c] === GridElement.Apple
+          [GridElement.Empty, GridElement.Apple].includes(
+            g[new_pos.row][new_pos.col]
+          )
         ) {
-          if (algo == "dijkstra") {
-            if (
-              closedList.findIndex(
-                (x) => x.pos.col === new_c && x.pos.row === new_r
-              ) === -1 &&
-              openList.findIndex(
-                (x) => x.pos.col === new_c && x.pos.row === new_r
-              ) === -1
-            ) {
-              openList.push({
-                pos: { row: new_r, col: new_c },
-                weight: f.weight + cost,
-              });
-              cameFrom.set(`${new_r},${new_c}`, f.pos);
-            } else {
-              const elemInOpenListIdx = openList.findIndex(
-                (x) => x.pos.col === new_c && x.pos.row === new_r
-              );
-              if (elemInOpenListIdx != -1) {
-                const elemInOpenList = openList[elemInOpenListIdx];
-                if (elemInOpenList.weight > f.weight + cost) {
-                  openList.splice(elemInOpenListIdx, 1);
-                  openList.push({
-                    pos: { row: new_r, col: new_c },
-                    weight: f.weight + cost,
-                  });
-                  cameFrom.set(`${new_r},${new_c}`, f.pos);
-                }
+          if (algo == "dijkstra" && indexInClosedList === -1) {
+            if (indexInOpenList !== -1) {
+              if (
+                openList[indexInOpenList].weight >
+                currentState.weight + cost
+              ) {
+                openList.splice(indexInOpenList, 1);
+                openList.push({
+                  pos: new_pos,
+                  weight: currentState.weight + cost,
+                });
+                cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
               }
+            } else {
+              openList.push({
+                pos: new_pos,
+                weight: currentState.weight + cost,
+              });
+              cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
             }
-          } else if (
-            closedList.findIndex(
-              (x) => x.pos.col === new_c && x.pos.row === new_r
-            ) === -1 &&
-            openList.findIndex(
-              (x) => x.pos.col === new_c && x.pos.row === new_r
-            ) === -1
-          ) {
+          } else if (indexInClosedList === -1 && indexInOpenList === -1) {
             if (algo == "dfs") {
               openList.unshift({
-                pos: { row: new_r, col: new_c },
-                weight: f.weight + cost,
+                pos: new_pos,
+                weight: currentState.weight + cost,
               });
             } else if (
               algo == "bfs" ||
@@ -249,44 +202,39 @@ const searchByAlgo = (
               algo == "a_star"
             ) {
               openList.push({
-                pos: { row: new_r, col: new_c },
-                weight: f.weight + cost,
+                pos: new_pos,
+                weight: currentState.weight + cost,
               });
             }
-            cameFrom.set(`${new_r},${new_c}`, f.pos);
+            cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
           } else if (algo == "a_star") {
-            const elemInOpenListIdx = openList.findIndex(
-              (x) => x.pos.col === new_c && x.pos.row === new_r
-            );
-            if (elemInOpenListIdx != -1) {
-              const elemInOpenList = openList[elemInOpenListIdx];
+            if (indexInOpenList != -1) {
+              const elemInOpenList = openList[indexInOpenList];
               if (
                 elemInOpenList.weight + heuristic(elemInOpenList.pos, t) >
-                f.weight + cost + heuristic({ row: new_r, col: new_c }, t)
+                currentState.weight + cost + heuristic(new_pos, t)
               ) {
-                openList.splice(elemInOpenListIdx, 1);
+                openList.splice(indexInOpenList, 1);
                 openList.push({
-                  pos: { row: new_r, col: new_c },
-                  weight: f.weight + cost,
+                  pos: new_pos,
+                  weight: currentState.weight + cost,
                 });
-                cameFrom.set(`${new_r},${new_c}`, f.pos);
+                cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
               }
             }
-            const elemInClosedListIdx = closedList.findIndex(
-              (x) => x.pos.col === new_c && x.pos.row === new_r
-            );
-            if (elemInClosedListIdx != -1) {
-              const elemInClosedList = closedList[elemInClosedListIdx];
+
+            if (indexInClosedList != -1) {
+              const elemInClosedList = closedList[indexInClosedList];
               if (
                 elemInClosedList.weight + heuristic(elemInClosedList.pos, t) >
-                f.weight + cost + heuristic({ row: new_r, col: new_c }, t)
+                currentState.weight + cost + heuristic(new_pos, t)
               ) {
-                closedList.splice(elemInClosedListIdx, 1);
+                closedList.splice(indexInClosedList, 1);
                 openList.push({
-                  pos: { row: new_r, col: new_c },
-                  weight: f.weight + cost,
+                  pos: new_pos,
+                  weight: currentState.weight + cost,
                 });
-                cameFrom.set(`${new_r},${new_c}`, f.pos);
+                cameFrom.set(`${new_pos.row},${new_pos.col}`, currentState.pos);
               }
             }
           }
@@ -337,8 +285,8 @@ export const next_move = (
   path = searchRes.path;
   let searchFrames = searchRes.frames;
   searchFrames = searchFrames.map((frame) => {
-    snake.forEach((spos) => {
-      frame[spos.row][spos.col] = GridElement.OldSnake;
+    snake.forEach((pos) => {
+      frame[pos.row][pos.col] = GridElement.OldSnake;
     });
 
     frame[applePos.row][applePos.col] = GridElement.Apple;
@@ -346,7 +294,6 @@ export const next_move = (
   });
   frames.push(...searchFrames);
 
-  // while (path.length > 0 && path[0] == snake[0]) path.shift();
   let pastPath: Pos[] = [];
   while (path.length > 0) {
     let currentFrame = cloneGrid(searchRes.frames[searchRes.frames.length - 1]);
@@ -396,11 +343,12 @@ export const next_move = (
   return { frames: frames, snake: snake, dis: searchRes.dis };
 };
 
+// The following part was created by ChatGPT
 export const encodeGrid = (grid: GridElement[][]): string => {
   return grid
-    .flatMap((row) => row) // Flatten the 2D grid into a 1D array
-    .map((element) => element.toString()) // Convert each element to its string representation
-    .join(","); // Join all elements into a single string
+    .flatMap((row) => row)
+    .map((element) => element.toString())
+    .join(",");
 };
 
 export const decodeGrid = (

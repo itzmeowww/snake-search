@@ -1,7 +1,7 @@
 'use client'
 
 import Frame from "@/components/animation/frame";
-import { AlgoType, GridElement, Pos, cloneGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeInitialGrid2, makeWeight } from "@/lib/search";
+import { AlgoType, GridElement, Pos, cloneGrid, encodeGrid, encodePos, encodeSnake, encodeWeight, makeInitialGrid, makeWeight } from "@/lib/search";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   Card,
@@ -90,25 +90,25 @@ export default function Home() {
     setLoadingState(0)
 
     setLoading(true)
-    let newlog: { [key: string]: { frameN: number; dis: number } } = {};
+    let new_log: { [key: string]: { frameN: number; dis: number } } = {};
 
     const bfsRes = await callAPINextMove('bfs', r, c);
-    newlog['bfs'] = bfsRes;
+    new_log['bfs'] = bfsRes;
     setLoadingState(10)
     const dfsRes = await callAPINextMove('dfs', r, c);
-    newlog['dfs'] = dfsRes;
+    new_log['dfs'] = dfsRes;
     setLoadingState(30)
     const dijkstraRes = await callAPINextMove('dijkstra', r, c);
-    newlog['dijkstra'] = dijkstraRes;
+    new_log['dijkstra'] = dijkstraRes;
     setLoadingState(50)
     const bestFirstSearchRes = await callAPINextMove('best_first_search', r, c);
-    newlog['best_first_search'] = bestFirstSearchRes;
+    new_log['best_first_search'] = bestFirstSearchRes;
     setLoadingState(70)
     const aStarRes = await callAPINextMove('a_star', r, c);
     setLoadingState(100)
-    newlog['a_star'] = aStarRes;
+    new_log['a_star'] = aStarRes;
     setLoading(false)
-    setLog((prevLog) => ([...prevLog, newlog]));
+    setLog((prevLog) => ([...prevLog, new_log]));
     setFrame(0)
     stopPlay()
     toast({
@@ -191,7 +191,7 @@ export default function Home() {
 
     const weight = makeWeight(size, size, isWeightedGraph)
     setWeight(weight)
-    const initialGrid = isRandomWall ? makeInitialGrid2(size, size) : makeInitialGrid(size, size)
+    const initialGrid = makeInitialGrid(size, size, isRandomWall)
     let initialState = { initialGrid: initialGrid, snake: [{ row: Math.floor(size / 2), col: Math.floor(size / 2) }] }
     setStateBFS(initialState)
     setStateDFS(initialState)
