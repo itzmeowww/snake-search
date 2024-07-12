@@ -76,7 +76,7 @@ const searchByAlgo = (
       const cost = Math.abs(
         weight[new_pos.row][new_pos.col] -
           weight[currentState.pos.row][currentState.pos.col]
-      );
+      )+1;
 
       if (
         0 <= new_pos.row &&
