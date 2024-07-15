@@ -2,6 +2,8 @@
 
 Simulate BFS, DFS, Best First Search, Dijkstra, and A\* in the context of Snake Game
 
+More details  [here](https://snake.thnsnkmd.com/en/about)
+
 ### How to deploy a website locally.
 
 ```
