@@ -1,0 +1,42 @@
+{
+  "HomePage": {
+    "Simulation Settings": "Simulation Settings",
+    "Game Size": "Grid Size",
+    "Animation Speed": "Animation Speed",
+    "Slow": "Slow",
+    "Fast": "Fast",
+    "With Cost": "With Cost",
+    "Randomized Wall": "Randomized Wall",
+    "Algorithm": "Algorithm",
+    "Number": "Number",
+    "Icon": "Icon",
+    "What is this": "What is this?",
+    "Reset" : "Reset",
+    "Play":"Play",
+    "Playing":"Playing",
+    "Ready":"Animation is ready",
+    "Ready Desc":"Press 'Play' button to start",
+    "Cant Place":"Cannot Place Here",
+    "Cant Place Desc":"Please place apple at other places",
+    "BFS": "Breadth First Search",
+    "DFS": "Depth First Search",
+    "Best First Search": "Best First Search",
+    "Dijkstra": "Dijkstra",
+    "A*":"A*",
+    "Cant Set":"Setting Is Invalid",
+    "Cant Set Desc": "Grid size should be in between 5 and 45"
+  },
+  "About": {
+    "Back": "Back",
+    "Title": "Snake Game: Comparing Search Algorithms",
+    "Paragraph1": "This simulation showcases the classic Snake game, with the snake controlled by various search algorithms such as BFS, DFS, Dijkstra, Best First Search, and A*.",
+    "Paragraph2": "In a typical Snake game, the player controls the snake to reach an apple. However, in this simulation, the roles are reversed: we place the apple, and the snake, guided by different algorithms, attempts to reach the placed apple.",
+    "Paragraph3": "Two key terms to understand are 'cost' and 'frame.' In this context, 'frame' refers to the total number of animation frames used for finding and moving the snake. This reflects the number of cells visited and steps taken to move the snake.",
+    "Paragraph4": "Cost is calculated as the difference in numbers on the grid plus one, with the total cost being the sum of these individual costs. This metric is used in Dijkstra's and A* algorithms. Also, for heuristic value in A* and Best First Search, the Manhattan distance is used."
+  },
+  "Frame":{
+    "Cost":"Cost",
+    "Step":"Step",
+    "Total":"Sum"
+  }
+}
