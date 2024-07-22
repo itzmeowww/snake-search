@@ -12,7 +12,7 @@ const Page = () => {
     const params = useParams();
     const { locale } = params
     return (
-        <main className="max-w-2xl mx-auto py-12 flex flex-col gap-6">
+        <main className="max-w-2xl mx-auto py-12 flex flex-col gap-6 px-6">
             <div className=" w-fit flex gap-2 fixed top-4 right-6">
                 <Link href={'/about'} locale="en">
                     <Button size={'sm'} variant={locale == 'en' ? 'default' : 'outline'}>EN</Button>
